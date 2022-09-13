@@ -1,73 +1,68 @@
 import './css/styles.css';
 import Notiflix from 'notiflix';
-import debounce from 'lodash.debounce';
-import API from './js/fetchCountries';
-const DEBOUNCE_DELAY = 300;
+import SimpleLightbox from "simplelightbox";
+import 'simplelightbox/dist/simple-lightbox.min.css';
+import API from './js/fetchImg';
 
+const gallery = new SimpleLightbox('.gallery .photo-link');
 const refs = {
-    inputEl: document.querySelector('#search-box'),
-    countryList: document.querySelector('.country-list'),
-    countryInfo: document.querySelector('.country-info')
+    form: document.querySelector('.search-form'),
+    inputEl: document.querySelector('.search-form input'),
+    listOfEl: document.querySelector('.gallery'),
+    btnEl: document.querySelector('.load-more')
 };
- 
-refs.inputEl.addEventListener("input", debounce(onSearch, DEBOUNCE_DELAY));
+const imgApiService = new API();
+
+refs.form.addEventListener("submit", onSearch);
+refs.btnEl.addEventListener("click", onLoadMore);
 
 function onSearch(evt) {
     evt.preventDefault();
-    const form = evt.target;
-    let searchCountry = form.value.trim();
-    form.value = searchCountry;
-    if (searchCountry != "") {
-        API.fetchCountries(searchCountry)
-            .then(checkLength)
-            .catch(onFetchError)
-    } else {
-        refs.countryList.innerHTML = "";
-    }
-} 
-
+    imgApiService.query = evt.currentTarget.elements.searchQuery.value
+    imgApiService.resetPage();
+    imgApiService.fetchArticles().then(appendArticles).catch(onFetchError);
+}
+function appendArticles(listOfImg) {
+    const markup = listOfImg.map((item) => {
+        return `<a class="photo-link"  href=${item.largeImageURL}>
+                <div class="photo-card">    
+                    <img src=${item.webformatURL} alt=${item.tags} loading="lazy" />
+                        <div class="info">
+                            <p class="info-item">
+                                <b>Likes</b>
+                                <span>${item.likes}</span>
+                            </p>
+                            <p class="info-item">
+                                <b>Views</b>
+                                <span>${item.views}</span>
+                            </p>
+                            <p class="info-item">
+                                <b>Comments</b>
+                                <span>${item.comments}</span>
+                            </p>
+                            <p class="info-item">
+                                <b>Downloads</b>
+                                <span>${item.downloads}</span>
+                            </p>
+                        </div>
+                </div>
+                </a>`     
+    }).join("");
+    refs.listOfEl.insertAdjacentHTML('beforeend', markup)
+    gallery.refresh();
+}
+function onLoadMore() {
+    imgApiService.fetchArticles().then(appendArticles).catch(onFetchError);
+}
 function onFetchError() {
-    Notiflix.Notify.failure("Oops, there is no country with that name");
+    Notiflix.Notify.failure("Sorry, there are no images matching your search query. Please try again.");
 }
+// const { height: cardHeight } = document
+//   .querySelector(".gallery")
+//   .firstElementChild.getBoundingClientRect();
 
-function checkLength(listOfCountries) {
-    if (listOfCountries.length > 10) {
-        Notiflix.Notify.info("Too many matches found. Please enter a more specific name.");
-    } else if (listOfCountries.length <= 10 && listOfCountries.length >= 2) {
-        refs.countryInfo.innerHTML = "";
-        renderCountryList(listOfCountries);
-    } else {
-        refs.countryList.innerHTML = "";
-        renderCountryInfo(listOfCountries);
-    }
-}
-
-function renderCountryInfo(listOfCountries) {
-    const markup = listOfCountries
-        .map((n) => {
-            let langList = "";
-            for (let lang in n.languages) {
-                langList += n.languages[lang] + ", ";
-            }
-            return `
-            <h1><img class="icon" src=${n.flags.svg} />${n.name.official}</h1>
-            <p><b>Capital</b>: ${n.capital}</p>
-            <p><b>Population</b>: ${n.population}</p>
-            <p><b>Languages</b>: ${langList.slice(0, -2)}</p>`
-    })
-    .join("");
-  refs.countryInfo.innerHTML = markup;
-}
-    
-function renderCountryList(listOfCountries) {
-    const listOfItems = listOfCountries
-    .map((n) => {
-        return `
-        <li>
-            <img width="20" height="15" src=${n.flags.svg} />
-            <span>${n.name.official}</span>
-        </li>`
-    })
-    .join("");
-    refs.countryList.innerHTML = listOfItems;
-}
+// window.scrollBy({
+//   top: cardHeight * 2,
+//   behavior: "smooth",
+// });
+ 
