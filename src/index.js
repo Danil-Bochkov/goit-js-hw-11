@@ -6,8 +6,7 @@ import API from './js/fetchImg';
 import LoadMoreBtn from './js/LoadMoreBtn'
 
 const gallery = new SimpleLightbox('.gallery .photo-link');
-let hitsLeft = null;
-let counter = 0;
+
 const refs = {
     form: document.querySelector('.search-form'),
     inputEl: document.querySelector('.search-form input'),
