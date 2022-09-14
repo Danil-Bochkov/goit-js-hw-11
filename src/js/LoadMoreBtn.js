@@ -10,7 +10,6 @@ export default class LoadMoreBtn {
         refs.button = document.querySelector(selector);
         return refs;
     }
-
     enable() {
         this.refs.button.disabled = false;
     }

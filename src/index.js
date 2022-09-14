@@ -9,14 +9,15 @@ const gallery = new SimpleLightbox('.gallery .photo-link');
 
 const refs = {
     form: document.querySelector('.search-form'),
-    inputEl: document.querySelector('.search-form input'),
     listOfEl: document.querySelector('.gallery'),
 };
 const imgApiService = new API();
+
 const loadMoreBtn = new LoadMoreBtn({
     selector: '.load-more',
     hidden: true,
 });
+
 refs.form.addEventListener("submit", onSearch);
 loadMoreBtn.refs.button.addEventListener("click", loadArticles);
 
@@ -63,6 +64,11 @@ function appendArticles(listOfImg) {
 function loadArticles() {    
     loadMoreBtn.disable();
     imgApiService.fetchArticles().then(articles => {
+        if (articles.totalHits <= imgApiService.page * imgApiService.pageLimit) {
+            loadMoreBtn.disable();
+            loadMoreBtn.hide();
+            Notiflix.Notify.info("We're sorry, but you've reached the end of search results.");
+        }
         appendArticles(articles.hits);
         loadMoreBtn.enable();
     }).catch(onFetchError);
