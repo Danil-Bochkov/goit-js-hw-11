@@ -3,25 +3,34 @@ import Notiflix from 'notiflix';
 import SimpleLightbox from "simplelightbox";
 import 'simplelightbox/dist/simple-lightbox.min.css';
 import API from './js/fetchImg';
+import LoadMoreBtn from './js/LoadMoreBtn'
 
 const gallery = new SimpleLightbox('.gallery .photo-link');
+let hitsLeft = null;
+let counter = 0;
 const refs = {
     form: document.querySelector('.search-form'),
     inputEl: document.querySelector('.search-form input'),
     listOfEl: document.querySelector('.gallery'),
-    btnEl: document.querySelector('.load-more')
 };
 const imgApiService = new API();
-
+const loadMoreBtn = new LoadMoreBtn({
+    selector: '.load-more',
+    hidden: true,
+});
 refs.form.addEventListener("submit", onSearch);
-refs.btnEl.addEventListener("click", onLoadMore);
+loadMoreBtn.refs.button.addEventListener("click", loadArticles);
 
-function onSearch(evt) {
+async function onSearch(evt) {
     evt.preventDefault();
     imgApiService.query = evt.currentTarget.elements.searchQuery.value
+    if (imgApiService.query === "") {
+        return Notiflix.Notify.info('Please, make some query');
+    }
+    loadMoreBtn.show();
     imgApiService.resetPage();
     refs.listOfEl.innerHTML = '';
-    imgApiService.fetchArticles().then(appendArticles).catch(onFetchError);
+    loadArticles();
 }
 function appendArticles(listOfImg) {
     const markup = listOfImg.map((item) => {
@@ -52,9 +61,14 @@ function appendArticles(listOfImg) {
     refs.listOfEl.insertAdjacentHTML('beforeend', markup)
     gallery.refresh();
 }
-function onLoadMore() {
-    imgApiService.fetchArticles().then(appendArticles).catch(onFetchError);
+function loadArticles() {    
+    loadMoreBtn.disable();
+    imgApiService.fetchArticles().then(articles => {
+        appendArticles(articles.hits);
+        loadMoreBtn.enable();
+    }).catch(onFetchError);
 }
-function onFetchError() {
+
+async function onFetchError() {
     Notiflix.Notify.failure("Sorry, there are no images matching your search query. Please try again.");
 }
